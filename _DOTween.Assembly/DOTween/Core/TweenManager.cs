@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using DG.Tweening.Core.Enums;
+using DG.Tweening.Plugins.Options;
 using UnityEngine;
 
 namespace DG.Tweening.Core
@@ -52,7 +53,7 @@ namespace DG.Tweening.Core
         // Returns a new Tweener, from the pool if there's one available,
         // otherwise by instantiating a new one
         internal static TweenerCore<T1,T2,TPlugOptions> GetTweener<T1,T2,TPlugOptions>()
-            where TPlugOptions : struct
+            where TPlugOptions : struct, IPlugOptions
         {
             TweenerCore<T1,T2,TPlugOptions> t;
             // Search inside pool
@@ -255,7 +256,10 @@ namespace DG.Tweening.Core
             // Fire eventual onKill callbacks
             for (int i = 0; i < totActiveTweens; ++i) {
                 Tween t = _activeTweens[i];
-                if (t != null && t.onKill != null) Tween.OnTweenCallback(t.onKill);
+                if (t != null) {
+                    t.active = false;
+                    if (t.onKill != null) Tween.OnTweenCallback(t.onKill);
+                }
             }
 
             ClearTweenArray(_activeTweens);
@@ -316,9 +320,7 @@ namespace DG.Tweening.Core
             }
             // Kill all eventually marked tweens
             if (totInvalid > 0) {
-                DespawnTweens(_KillList, false);
-                int count = _KillList.Count - 1;
-                for (int i = count; i > -1; --i) RemoveActiveTween(_KillList[i]);
+                DespawnActiveTweens(_KillList);
                 _KillList.Clear();
             }
             return totInvalid;
@@ -383,10 +385,24 @@ namespace DG.Tweening.Core
                 } else {
                     if (t.isBackwards) {
                         toPosition -= tDeltaTime;
-                        while (toPosition < 0 && toCompletedLoops > 0) {
+                        while (toPosition < 0 && toCompletedLoops > -1) {
                             toPosition += t.duration;
                             toCompletedLoops--;
                         }
+                        if (toCompletedLoops < 0 || wasEndPosition && toCompletedLoops < 1) {
+                            // Result is equivalent to a rewind, so set values according to it
+                            toPosition = 0;
+                            toCompletedLoops = wasEndPosition ? 1 : 0;
+                        }
+//                        while (toPosition < 0 && toCompletedLoops > 0) {
+//                            toPosition += t.duration;
+//                            toCompletedLoops--;
+//                        }
+//                        if (wasEndPosition && toCompletedLoops <= 0) {
+//                            // Force-rewind
+//                            Rewind(t, false);
+//                            continue;
+//                        }
                     } else {
                         toPosition += tDeltaTime;
                         while (toPosition >= t.duration && (t.loops == -1 || toCompletedLoops < t.loops)) {
@@ -410,9 +426,7 @@ namespace DG.Tweening.Core
                     // Do not despawn tweens again, since Kill/DespawnAll was already called
                     _despawnAllCalledFromUpdateLoopCallback = false;
                 } else {
-                    DespawnTweens(_KillList, false);
-                    int count = _KillList.Count - 1;
-                    for (int i = count; i > -1; --i) RemoveActiveTween(_KillList[i]);
+                    DespawnActiveTweens(_KillList);
                 }
                 _KillList.Clear();
             }
@@ -434,16 +448,16 @@ namespace DG.Tweening.Core
                     isFilterCompliant = true;
                     break;
                 case FilterType.TargetOrId:
-                    isFilterCompliant = id.Equals(t.id) || id.Equals(t.target);
+                    isFilterCompliant = t.id != null && id.Equals(t.id) || t.target != null && id.Equals(t.target);
                     break;
                 case FilterType.TargetAndId:
-                    isFilterCompliant = id.Equals(t.id) && optionalObj != null && optionalObj.Equals(t.target);
+                    isFilterCompliant = t.id != null && t.target != null && optionalObj != null && id.Equals(t.id) && optionalObj.Equals(t.target);
                     break;
                 case FilterType.AllExceptTargetsOrIds:
                     isFilterCompliant = true;
                     for (int c = 0; c < optionalArrayLen; ++c) {
                         object objId = optionalArray[c];
-                        if (objId.Equals(t.id) || objId.Equals(t.target)) {
+                        if (t.id != null && objId.Equals(t.id) || t.target != null && objId.Equals(t.target)) {
                             isFilterCompliant = false;
                             break;
                         }
@@ -454,12 +468,12 @@ namespace DG.Tweening.Core
                     switch (operationType) {
                     case OperationType.Despawn:
                         totInvolved++;
-                        if (isUpdateLoop) t.active = false; // Just mark it for killing, so the update loop will take care of it
-                        else {
-                            Despawn(t, false);
-                            hasDespawned = true;
-                            _KillList.Add(t);
-                        }
+                        t.active = false; // Mark it as inactive immediately, so eventual kills called inside a kill won't have effect
+//                        if (isUpdateLoop) t.active = false; // Just mark it for killing, so the update loop will take care of it
+                        if (isUpdateLoop) break; // Just mark it for killing, the update loop will take care of the rest
+                        Despawn(t, false);
+                        hasDespawned = true;
+                        _KillList.Add(t);
                         break;
                     case OperationType.Complete:
                         bool hasAutoKill = t.autoKill;
@@ -496,7 +510,7 @@ namespace DG.Tweening.Core
                         if (PlayForward(t)) totInvolved++;
                         break;
                     case OperationType.Restart:
-                        if (Restart(t, optionalBool)) totInvolved++;
+                        if (Restart(t, optionalBool, optionalFloat)) totInvolved++;
                         break;
                     case OperationType.Rewind:
                         if (Rewind(t, optionalBool)) totInvolved++;
@@ -508,7 +522,7 @@ namespace DG.Tweening.Core
                         if (TogglePause(t)) totInvolved++;
                         break;
                     case OperationType.IsTweening:
-                        if (!t.isComplete || !t.autoKill) totInvolved++;
+                        if ((!t.isComplete || !t.autoKill) && (!optionalBool || t.isPlaying)) totInvolved++;
                         break;
                     }
                 }
@@ -627,10 +641,11 @@ namespace DG.Tweening.Core
             return Play(t);
         }
 
-        internal static bool Restart(Tween t, bool includeDelay = true)
+        internal static bool Restart(Tween t, bool includeDelay = true, float changeDelayTo = -1)
         {
             bool wasPaused = !t.isPlaying;
             t.isBackwards = false;
+            if (changeDelayTo >= 0) t.delay = changeDelayTo;
             Rewind(t, includeDelay);
             t.isPlaying = true;
             if (wasPaused && t.playedOnce && t.delayComplete && t.onPlay != null) {
@@ -830,10 +845,10 @@ namespace DG.Tweening.Core
             _reorganizeFromId = -1;
         }
 
-        static void DespawnTweens(List<Tween> tweens, bool modifyActiveLists = true)
+        static void DespawnActiveTweens(List<Tween> tweens)
         {
-            int count = tweens.Count;
-            for (int i = 0; i < count; ++i) Despawn(tweens[i], modifyActiveLists);
+            int count = tweens.Count - 1;
+            for (int i = count; i > -1; --i) Despawn(tweens[i]);
         }
 
         // Removes a tween from the active list, reorganizes said list

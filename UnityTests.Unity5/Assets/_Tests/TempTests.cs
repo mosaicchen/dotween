@@ -6,21 +6,20 @@ using DG.Tweening;
 using DG.Tweening.Core;
 using DG.Tweening.Plugins.Options;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class TempTests : BrainBase
 {
-    IEnumerator Start ()
+    public RectTransform target;
+
+    void Start()
     {
-    	yield return new WaitForSeconds(0.5f);
+        DOTween.Init();
+    }
 
-    	Debug.Log(Time.realtimeSinceStartup);
-    	DOVirtual.DelayedCall(2, ()=> Debug.Log("Call > " + Time.realtimeSinceStartup))
-    		.OnStart(()=> Debug.Log("Start > " + Time.realtimeSinceStartup));
-
-    	DOTween.Sequence()
-    		.OnStart(()=> Debug.Log("S Start > " + Time.realtimeSinceStartup))
-    		.AppendInterval(2)
-    		.OnComplete(()=> Debug.Log("S Complete > " + Time.realtimeSinceStartup));
+    public void Shake(float duration)
+    {
+        target.DOShakeScale(duration, 0.15f, 10, 90f, true)
+			.SetEase(Ease.InOutBack)
+			.Play();
     }
 }

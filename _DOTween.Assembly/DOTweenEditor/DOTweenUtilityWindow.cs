@@ -11,7 +11,33 @@ using UnityEngine;
 
 namespace DG.DOTweenEditor
 {
-    public class UtilityWindowProcessor : AssetPostprocessor
+    public class UtilityWindowModificationProcessor : AssetModificationProcessor
+    {
+        // Checks if deleted folder contains DOTween Pro and in case removes scripting define symbols
+        static AssetDeleteResult OnWillDeleteAsset(string asset, RemoveAssetOptions options)
+        {
+            // Check if asset is a directory
+            string dir = EditorUtils.ADBPathToFullPath(asset);
+            if (!Directory.Exists(dir)) return AssetDeleteResult.DidNotDelete;
+            // Check if directory contains DOTweenPro.dll
+            string[] files = Directory.GetFiles(dir, "DOTween.dll", SearchOption.AllDirectories);
+            int len = files.Length;
+            bool containsDOTween = false;
+            for (int i = 0; i < len; ++i) {
+                if (!files[i].EndsWith("DOTween.dll")) continue;
+                containsDOTween = true;
+                break;
+            }
+            if (!containsDOTween) return AssetDeleteResult.DidNotDelete;
+            // DOTween found: remove scripting define symbols
+            DOTweenSetupMenuItem.ProEditor_RemoveGlobalDefine("DOTWEEN_TK2D");
+            DOTweenSetupMenuItem.ProEditor_RemoveGlobalDefine("DOTWEEN_TMP");
+            EditorUtility.DisplayDialog("DOTween Deleted", "DOTween was deleted and any of its scripting define symbols removed.\nThis might show an error depending on your previous setup. If this happens, please close and reopen Unity or reimport DOTween.", "Ok");
+            return AssetDeleteResult.DidNotDelete;
+        }
+    }
+
+    public class UtilityWindowPostProcessor : AssetPostprocessor
     {
         static bool _setupDialogRequested; // Used to prevent OnPostProcessAllAssets firing twice (because of a Unity bug/feature)
 
@@ -45,11 +71,11 @@ namespace DG.DOTweenEditor
 
     class DOTweenUtilityWindow : EditorWindow
     {
-        [MenuItem("Tools/" + _Title)]
+        [MenuItem("Tools/Demigiant/" + _Title)]
         static void ShowWindow() { Open(); }
 		
         const string _Title = "DOTween Utility Panel";
-        static readonly Vector2 _WinSize = new Vector2(300,405);
+        static readonly Vector2 _WinSize = new Vector2(300,421);
         public const string Id = "DOTweenVersion";
         public const string IdPro = "DOTweenProVersion";
         static readonly float _HalfBtSize = _WinSize.x * 0.5f - 6;
@@ -176,6 +202,7 @@ namespace DG.DOTweenEditor
                 _src.showUnityEditorReport = false;
                 _src.timeScale = 1;
                 _src.useSmoothDeltaTime = false;
+                _src.maxSmoothUnscaledTime = 0.15f;
                 _src.logBehaviour = LogBehaviour.ErrorsOnly;
                 _src.drawGizmos = true;
                 _src.defaultRecyclable = false;
@@ -193,6 +220,7 @@ namespace DG.DOTweenEditor
             _src.useSafeMode = EditorGUILayout.Toggle("Safe Mode", _src.useSafeMode);
             _src.timeScale = EditorGUILayout.FloatField("DOTween's TimeScale", _src.timeScale);
             _src.useSmoothDeltaTime = EditorGUILayout.Toggle("Smooth DeltaTime", _src.useSmoothDeltaTime);
+            _src.maxSmoothUnscaledTime = EditorGUILayout.Slider("Max SmoothUnscaledTime", _src.maxSmoothUnscaledTime, 0.01f, 1f);
             _src.showUnityEditorReport = EditorGUILayout.Toggle("Editor Report", _src.showUnityEditorReport);
             _src.logBehaviour = (LogBehaviour)EditorGUILayout.EnumPopup("Log Behaviour", _src.logBehaviour);
             _src.drawGizmos = EditorGUILayout.Toggle("Draw Path Gizmos", _src.drawGizmos);

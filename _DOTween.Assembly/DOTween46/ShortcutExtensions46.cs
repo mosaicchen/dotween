@@ -259,6 +259,31 @@ namespace DG.Tweening
                 .SetOptions(snapping).SetTarget(target);
         }
 
+        /// <summary>Tweens a RectTransform's pivot to the given value.
+        /// Also stores the RectTransform as the tween's target so it can be used for filtered operations</summary>
+        /// <param name="endValue">The end value to reach</param><param name="duration">The duration of the tween</param>
+        public static Tweener DOPivot(this RectTransform target, Vector2 endValue, float duration)
+        {
+            return DOTween.To(() => target.pivot, x => target.pivot = x, endValue, duration)
+                .SetTarget(target);
+        }
+        /// <summary>Tweens a RectTransform's pivot X to the given value.
+        /// Also stores the RectTransform as the tween's target so it can be used for filtered operations</summary>
+        /// <param name="endValue">The end value to reach</param><param name="duration">The duration of the tween</param>
+        public static Tweener DOPivotX(this RectTransform target, float endValue, float duration)
+        {
+            return DOTween.To(() => target.pivot, x => target.pivot = x, new Vector2(endValue, 0), duration)
+                .SetOptions(AxisConstraint.X).SetTarget(target);
+        }
+        /// <summary>Tweens a RectTransform's pivot Y to the given value.
+        /// Also stores the RectTransform as the tween's target so it can be used for filtered operations</summary>
+        /// <param name="endValue">The end value to reach</param><param name="duration">The duration of the tween</param>
+        public static Tweener DOPivotY(this RectTransform target, float endValue, float duration)
+        {
+            return DOTween.To(() => target.pivot, x => target.pivot = x, new Vector2(0, endValue), duration)
+                .SetOptions(AxisConstraint.Y).SetTarget(target);
+        }
+
         /// <summary>Tweens a RectTransform's sizeDelta to the given value.
         /// Also stores the RectTransform as the tween's target so it can be used for filtered operations</summary>
         /// <param name="endValue">The end value to reach</param><param name="duration">The duration of the tween</param>
@@ -293,9 +318,10 @@ namespace DG.Tweening
         /// <param name="randomness">Indicates how much the shake will be random (0 to 180 - values higher than 90 kind of suck, so beware). 
         /// Setting it to 0 will shake along a single direction.</param>
         /// <param name="snapping">If TRUE the tween will smoothly snap all values to integers</param>
-        public static Tweener DOShakeAnchorPos(this RectTransform target, float duration, float strength = 100, int vibrato = 10, float randomness = 90, bool snapping = false)
+        /// <param name="fadeOut">If TRUE the shake will automatically fadeOut smoothly within the tween's duration, otherwise it will not</param>
+        public static Tweener DOShakeAnchorPos(this RectTransform target, float duration, float strength = 100, int vibrato = 10, float randomness = 90, bool snapping = false, bool fadeOut = true)
         {
-            return DOTween.Shake(() => target.anchoredPosition, x => target.anchoredPosition = x, duration, strength, vibrato, randomness, true)
+            return DOTween.Shake(() => target.anchoredPosition, x => target.anchoredPosition = x, duration, strength, vibrato, randomness, true, fadeOut)
                 .SetTarget(target).SetSpecialStartupMode(SpecialStartupMode.SetShake).SetOptions(snapping);
         }
         /// <summary>Shakes a RectTransform's anchoredPosition with the given values.
@@ -306,9 +332,10 @@ namespace DG.Tweening
         /// <param name="randomness">Indicates how much the shake will be random (0 to 180 - values higher than 90 kind of suck, so beware). 
         /// Setting it to 0 will shake along a single direction.</param>
         /// <param name="snapping">If TRUE the tween will smoothly snap all values to integers</param>
-        public static Tweener DOShakeAnchorPos(this RectTransform target, float duration, Vector2 strength, int vibrato = 10, float randomness = 90, bool snapping = false)
+        /// <param name="fadeOut">If TRUE the shake will automatically fadeOut smoothly within the tween's duration, otherwise it will not</param>
+        public static Tweener DOShakeAnchorPos(this RectTransform target, float duration, Vector2 strength, int vibrato = 10, float randomness = 90, bool snapping = false, bool fadeOut = true)
         {
-            return DOTween.Shake(() => target.anchoredPosition, x => target.anchoredPosition = x, duration, strength, vibrato, randomness)
+            return DOTween.Shake(() => target.anchoredPosition, x => target.anchoredPosition = x, duration, strength, vibrato, randomness, fadeOut)
                 .SetTarget(target).SetSpecialStartupMode(SpecialStartupMode.SetShake).SetOptions(snapping);
         }
 

@@ -126,9 +126,14 @@ namespace DG.Tweening
         /// <param name="vibrato">Indicates how much will the shake vibrate</param>
         /// <param name="randomness">Indicates how much the shake will be random (0 to 180 - values higher than 90 kind of suck, so beware). 
         /// Setting it to 0 will shake along a single direction.</param>
-        public static Tweener DOShakePosition(this Camera target, float duration, float strength = 3, int vibrato = 10, float randomness = 90)
+        /// <param name="fadeOut">If TRUE the shake will automatically fadeOut smoothly within the tween's duration, otherwise it will not</param>
+        public static Tweener DOShakePosition(this Camera target, float duration, float strength = 3, int vibrato = 10, float randomness = 90, bool fadeOut = true)
         {
-            return DOTween.Shake(() => target.transform.localPosition, x => target.transform.localPosition = x, duration, strength, vibrato, randomness)
+            if (duration <= 0) {
+                if (Debugger.logPriority > 0) Debug.LogWarning("DOShakePosition: duration can't be 0, returning NULL without creating a tween");
+                return null;
+            }
+            return DOTween.Shake(() => target.transform.localPosition, x => target.transform.localPosition = x, duration, strength, vibrato, randomness, true, fadeOut)
                 .SetTarget(target).SetSpecialStartupMode(SpecialStartupMode.SetCameraShakePosition);
         }
         /// <summary>Shakes a Camera's localPosition along its relative X Y axes with the given values.
@@ -138,9 +143,14 @@ namespace DG.Tweening
         /// <param name="vibrato">Indicates how much will the shake vibrate</param>
         /// <param name="randomness">Indicates how much the shake will be random (0 to 180 - values higher than 90 kind of suck, so beware). 
         /// Setting it to 0 will shake along a single direction.</param>
-        public static Tweener DOShakePosition(this Camera target, float duration, Vector3 strength, int vibrato = 10, float randomness = 90)
+        /// <param name="fadeOut">If TRUE the shake will automatically fadeOut smoothly within the tween's duration, otherwise it will not</param>
+        public static Tweener DOShakePosition(this Camera target, float duration, Vector3 strength, int vibrato = 10, float randomness = 90, bool fadeOut = true)
         {
-            return DOTween.Shake(() => target.transform.localPosition, x => target.transform.localPosition = x, duration, strength, vibrato, randomness)
+            if (duration <= 0) {
+                if (Debugger.logPriority > 0) Debug.LogWarning("DOShakePosition: duration can't be 0, returning NULL without creating a tween");
+                return null;
+            }
+            return DOTween.Shake(() => target.transform.localPosition, x => target.transform.localPosition = x, duration, strength, vibrato, randomness, fadeOut)
                 .SetTarget(target).SetSpecialStartupMode(SpecialStartupMode.SetCameraShakePosition);
         }
 
@@ -151,9 +161,14 @@ namespace DG.Tweening
         /// <param name="vibrato">Indicates how much will the shake vibrate</param>
         /// <param name="randomness">Indicates how much the shake will be random (0 to 180 - values higher than 90 kind of suck, so beware). 
         /// Setting it to 0 will shake along a single direction.</param>
-        public static Tweener DOShakeRotation(this Camera target, float duration, float strength = 90, int vibrato = 10, float randomness = 90)
+        /// <param name="fadeOut">If TRUE the shake will automatically fadeOut smoothly within the tween's duration, otherwise it will not</param>
+        public static Tweener DOShakeRotation(this Camera target, float duration, float strength = 90, int vibrato = 10, float randomness = 90, bool fadeOut = true)
         {
-            return DOTween.Shake(() => target.transform.localEulerAngles, x => target.transform.localRotation = Quaternion.Euler(x), duration, strength, vibrato, randomness, false)
+            if (duration <= 0) {
+                if (Debugger.logPriority > 0) Debug.LogWarning("DOShakeRotation: duration can't be 0, returning NULL without creating a tween");
+                return null;
+            }
+            return DOTween.Shake(() => target.transform.localEulerAngles, x => target.transform.localRotation = Quaternion.Euler(x), duration, strength, vibrato, randomness, false, fadeOut)
                 .SetTarget(target).SetSpecialStartupMode(SpecialStartupMode.SetShake);
         }
         /// <summary>Shakes a Camera's localRotation.
@@ -163,9 +178,14 @@ namespace DG.Tweening
         /// <param name="vibrato">Indicates how much will the shake vibrate</param>
         /// <param name="randomness">Indicates how much the shake will be random (0 to 180 - values higher than 90 kind of suck, so beware). 
         /// Setting it to 0 will shake along a single direction.</param>
-        public static Tweener DOShakeRotation(this Camera target, float duration, Vector3 strength, int vibrato = 10, float randomness = 90)
+        /// <param name="fadeOut">If TRUE the shake will automatically fadeOut smoothly within the tween's duration, otherwise it will not</param>
+        public static Tweener DOShakeRotation(this Camera target, float duration, Vector3 strength, int vibrato = 10, float randomness = 90, bool fadeOut = true)
         {
-            return DOTween.Shake(() => target.transform.localEulerAngles, x => target.transform.localRotation = Quaternion.Euler(x), duration, strength, vibrato, randomness)
+            if (duration <= 0) {
+                if (Debugger.logPriority > 0) Debug.LogWarning("DOShakeRotation: duration can't be 0, returning NULL without creating a tween");
+                return null;
+            }
+            return DOTween.Shake(() => target.transform.localEulerAngles, x => target.transform.localRotation = Quaternion.Euler(x), duration, strength, vibrato, randomness, fadeOut)
                 .SetTarget(target).SetSpecialStartupMode(SpecialStartupMode.SetShake);
         }
 
@@ -400,7 +420,7 @@ namespace DG.Tweening
         public static Tweener DORotate(this Rigidbody target, Vector3 endValue, float duration, RotateMode mode = RotateMode.Fast)
         {
 #if COMPATIBLE
-            TweenerCore<QuaternionWrapper, Vector3Wrapper, QuaternionOptions> t = DOTween.To(() => target.rotation, x => target.MoveRotation(x), endValue, duration);
+            TweenerCore<DOQuaternion, DOVector3, QuaternionOptions> t = DOTween.To(() => target.rotation, x => target.MoveRotation(x), endValue, duration);
 #else
             TweenerCore<Quaternion, Vector3, QuaternionOptions> t = DOTween.To(() => target.rotation, target.MoveRotation, endValue, duration);
 #endif
@@ -417,7 +437,7 @@ namespace DG.Tweening
         public static Tweener DOLookAt(this Rigidbody target, Vector3 towards, float duration, AxisConstraint axisConstraint = AxisConstraint.None, Vector3? up = null)
         {
 #if COMPATIBLE
-            TweenerCore<QuaternionWrapper, Vector3Wrapper, QuaternionOptions> t = DOTween.To(() => target.rotation, x => target.MoveRotation(x), towards, duration)
+            TweenerCore<DOQuaternion, DOVector3, QuaternionOptions> t = DOTween.To(() => target.rotation, x => target.MoveRotation(x), towards, duration)
 #else
             TweenerCore<Quaternion, Vector3, QuaternionOptions> t = DOTween.To(() => target.rotation, target.MoveRotation, towards, duration)
 #endif
@@ -476,11 +496,89 @@ namespace DG.Tweening
             return s;
         }
 
-        #endregion
+        /// <summary>Tweens a Rigidbody's position through the given path waypoints, using the chosen path algorithm.
+        /// Also stores the Rigidbody as the tween's target so it can be used for filtered operations.
+        /// <para>NOTE: to tween a rigidbody correctly it should be set to kinematic at least while being tweened.</para>
+        /// <para>BEWARE: doesn't work on Windows Phone store (waiting for Unity to fix their own bug).
+        /// If you plan to publish there you should use a regular transform.DOPath.</para></summary>
+        /// <param name="path">The waypoints to go through</param>
+        /// <param name="duration">The duration of the tween</param>
+        /// <param name="pathType">The type of path: Linear (straight path) or CatmullRom (curved CatmullRom path)</param>
+        /// <param name="pathMode">The path mode: 3D, side-scroller 2D, top-down 2D</param>
+        /// <param name="resolution">The resolution of the path (useless in case of Linear paths): higher resolutions make for more detailed curved paths but are more expensive.
+        /// Defaults to 10, but a value of 5 is usually enough if you don't have dramatic long curves between waypoints</param>
+        /// <param name="gizmoColor">The color of the path (shown when gizmos are active in the Play panel and the tween is running)</param>
+        public static TweenerCore<Vector3, Path, PathOptions> DOPath(
+            this Rigidbody target, Vector3[] path, float duration, PathType pathType = PathType.Linear,
+            PathMode pathMode = PathMode.Full3D, int resolution = 10, Color? gizmoColor = null
+        )
+        {
+            if (resolution < 1) resolution = 1;
+            TweenerCore<Vector3, Path, PathOptions> t = DOTween.To(PathPlugin.Get(), () => target.position, target.MovePosition, new Path(pathType, path, resolution, gizmoColor), duration)
+                .SetTarget(target).SetUpdate(UpdateType.Fixed);
 
-        #endregion
+            t.plugOptions.isRigidbody = true;
+            t.plugOptions.mode = pathMode;
+            return t;
+        }
+        /// <summary>Tweens a Rigidbody's localPosition through the given path waypoints, using the chosen path algorithm.
+        /// Also stores the Rigidbody as the tween's target so it can be used for filtered operations
+        /// <para>NOTE: to tween a rigidbody correctly it should be set to kinematic at least while being tweened.</para>
+        /// <para>BEWARE: doesn't work on Windows Phone store (waiting for Unity to fix their own bug).
+        /// If you plan to publish there you should use a regular transform.DOLocalPath.</para></summary>
+        /// <param name="path">The waypoint to go through</param>
+        /// <param name="duration">The duration of the tween</param>
+        /// <param name="pathType">The type of path: Linear (straight path) or CatmullRom (curved CatmullRom path)</param>
+        /// <param name="pathMode">The path mode: 3D, side-scroller 2D, top-down 2D</param>
+        /// <param name="resolution">The resolution of the path: higher resolutions make for more detailed curved paths but are more expensive.
+        /// Defaults to 10, but a value of 5 is usually enough if you don't have dramatic long curves between waypoints</param>
+        /// <param name="gizmoColor">The color of the path (shown when gizmos are active in the Play panel and the tween is running)</param>
+        public static TweenerCore<Vector3, Path, PathOptions> DOLocalPath(
+            this Rigidbody target, Vector3[] path, float duration, PathType pathType = PathType.Linear,
+            PathMode pathMode = PathMode.Full3D, int resolution = 10, Color? gizmoColor = null
+        )
+        {
+            if (resolution < 1) resolution = 1;
+            Transform trans = target.transform;
+            TweenerCore<Vector3, Path, PathOptions> t = DOTween.To(PathPlugin.Get(), () => trans.localPosition, x => target.MovePosition(trans.parent == null ? x : trans.parent.TransformPoint(x)), new Path(pathType, path, resolution, gizmoColor), duration)
+                .SetTarget(target).SetUpdate(UpdateType.Fixed);
 
-        #region TrailRenderer Shortcuts
+            t.plugOptions.isRigidbody = true;
+            t.plugOptions.mode = pathMode;
+            t.plugOptions.useLocalPosition = true;
+            return t;
+        }
+        // Used by path editor when creating the actual tween, so it can pass a pre-compiled path
+        internal static TweenerCore<Vector3, Path, PathOptions> DOPath(
+            this Rigidbody target, Path path, float duration, PathMode pathMode = PathMode.Full3D
+        )
+        {
+            TweenerCore<Vector3, Path, PathOptions> t = DOTween.To(PathPlugin.Get(), () => target.position, target.MovePosition, path, duration)
+                .SetTarget(target);
+
+            t.plugOptions.isRigidbody = true;
+            t.plugOptions.mode = pathMode;
+            return t;
+        }
+        internal static TweenerCore<Vector3, Path, PathOptions> DOLocalPath(
+            this Rigidbody target, Path path, float duration, PathMode pathMode = PathMode.Full3D
+        )
+        {
+            Transform trans = target.transform;
+            TweenerCore<Vector3, Path, PathOptions> t = DOTween.To(PathPlugin.Get(), () => trans.localPosition, x => target.MovePosition(trans.parent == null ? x : trans.parent.TransformPoint(x)), path, duration)
+                .SetTarget(target);
+
+            t.plugOptions.isRigidbody = true;
+            t.plugOptions.mode = pathMode;
+            t.plugOptions.useLocalPosition = true;
+            return t;
+        }
+
+#endregion
+
+#endregion
+
+#region TrailRenderer Shortcuts
 
         /// <summary>Tweens a TrailRenderer's startWidth/endWidth to the given value.
         /// Also stores the TrailRenderer as the tween's target so it can be used for filtered operations</summary>
@@ -509,9 +607,9 @@ namespace DG.Tweening
                 .SetTarget(target);
         }
 
-        #endregion
+#endregion
 
-        #region Transform Shortcuts
+#region Transform Shortcuts
 
         /// <summary>Tweens a Transform's position to the given value.
         /// Also stores the transform as the tween's target so it can be used for filtered operations</summary>
@@ -717,6 +815,10 @@ namespace DG.Tweening
         /// <param name="snapping">If TRUE the tween will smoothly snap all values to integers</param>
         public static Tweener DOPunchPosition(this Transform target, Vector3 punch, float duration, int vibrato = 10, float elasticity = 1, bool snapping = false)
         {
+            if (duration <= 0) {
+                if (Debugger.logPriority > 0) Debug.LogWarning("DOPunchPosition: duration can't be 0, returning NULL without creating a tween");
+                return null;
+            }
             return DOTween.Punch(() => target.localPosition, x => target.localPosition = x, punch, duration, vibrato, elasticity)
                 .SetTarget(target).SetOptions(snapping);
         }
@@ -730,6 +832,10 @@ namespace DG.Tweening
         /// while 0 oscillates only between the punch scale and the start scale</param>
         public static Tweener DOPunchScale(this Transform target, Vector3 punch, float duration, int vibrato = 10, float elasticity = 1)
         {
+            if (duration <= 0) {
+                if (Debugger.logPriority > 0) Debug.LogWarning("DOPunchScale: duration can't be 0, returning NULL without creating a tween");
+                return null;
+            }
             return DOTween.Punch(() => target.localScale, x => target.localScale = x, punch, duration, vibrato, elasticity)
                 .SetTarget(target);
         }
@@ -743,6 +849,10 @@ namespace DG.Tweening
         /// while 0 oscillates only between the punch and the start rotation</param>
         public static Tweener DOPunchRotation(this Transform target, Vector3 punch, float duration, int vibrato = 10, float elasticity = 1)
         {
+            if (duration <= 0) {
+                if (Debugger.logPriority > 0) Debug.LogWarning("DOPunchRotation: duration can't be 0, returning NULL without creating a tween");
+                return null;
+            }
             return DOTween.Punch(() => target.localEulerAngles, x => target.localRotation = Quaternion.Euler(x), punch, duration, vibrato, elasticity)
                 .SetTarget(target);
         }
@@ -754,9 +864,14 @@ namespace DG.Tweening
         /// <param name="randomness">Indicates how much the shake will be random (0 to 180 - values higher than 90 kind of suck, so beware). 
         /// Setting it to 0 will shake along a single direction.</param>
         /// <param name="snapping">If TRUE the tween will smoothly snap all values to integers</param>
-        public static Tweener DOShakePosition(this Transform target, float duration, float strength = 1, int vibrato = 10, float randomness = 90, bool snapping = false)
+        /// <param name="fadeOut">If TRUE the shake will automatically fadeOut smoothly within the tween's duration, otherwise it will not</param>
+        public static Tweener DOShakePosition(this Transform target, float duration, float strength = 1, int vibrato = 10, float randomness = 90, bool snapping = false, bool fadeOut = true)
         {
-            return DOTween.Shake(() => target.localPosition, x => target.localPosition = x, duration, strength, vibrato, randomness, false)
+            if (duration <= 0) {
+                if (Debugger.logPriority > 0) Debug.LogWarning("DOShakePosition: duration can't be 0, returning NULL without creating a tween");
+                return null;
+            }
+            return DOTween.Shake(() => target.localPosition, x => target.localPosition = x, duration, strength, vibrato, randomness, false, fadeOut)
                 .SetTarget(target).SetSpecialStartupMode(SpecialStartupMode.SetShake).SetOptions(snapping);
         }
         /// <summary>Shakes a Transform's localPosition with the given values.</summary>
@@ -766,9 +881,14 @@ namespace DG.Tweening
         /// <param name="randomness">Indicates how much the shake will be random (0 to 180 - values higher than 90 kind of suck, so beware). 
         /// Setting it to 0 will shake along a single direction.</param>
         /// <param name="snapping">If TRUE the tween will smoothly snap all values to integers</param>
-        public static Tweener DOShakePosition(this Transform target, float duration, Vector3 strength, int vibrato = 10, float randomness = 90, bool snapping = false)
+        /// <param name="fadeOut">If TRUE the shake will automatically fadeOut smoothly within the tween's duration, otherwise it will not</param>
+        public static Tweener DOShakePosition(this Transform target, float duration, Vector3 strength, int vibrato = 10, float randomness = 90, bool snapping = false, bool fadeOut = true)
         {
-            return DOTween.Shake(() => target.localPosition, x => target.localPosition = x, duration, strength, vibrato, randomness)
+            if (duration <= 0) {
+                if (Debugger.logPriority > 0) Debug.LogWarning("DOShakePosition: duration can't be 0, returning NULL without creating a tween");
+                return null;
+            }
+            return DOTween.Shake(() => target.localPosition, x => target.localPosition = x, duration, strength, vibrato, randomness, fadeOut)
                 .SetTarget(target).SetSpecialStartupMode(SpecialStartupMode.SetShake).SetOptions(snapping);
         }
         /// <summary>Shakes a Transform's localRotation.</summary>
@@ -777,9 +897,14 @@ namespace DG.Tweening
         /// <param name="vibrato">Indicates how much will the shake vibrate</param>
         /// <param name="randomness">Indicates how much the shake will be random (0 to 180 - values higher than 90 kind of suck, so beware). 
         /// Setting it to 0 will shake along a single direction.</param>
-        public static Tweener DOShakeRotation(this Transform target, float duration, float strength = 90, int vibrato = 10, float randomness = 90)
+        /// <param name="fadeOut">If TRUE the shake will automatically fadeOut smoothly within the tween's duration, otherwise it will not</param>
+        public static Tweener DOShakeRotation(this Transform target, float duration, float strength = 90, int vibrato = 10, float randomness = 90, bool fadeOut = true)
         {
-            return DOTween.Shake(() => target.localEulerAngles, x => target.localRotation = Quaternion.Euler(x), duration, strength, vibrato, randomness, false)
+            if (duration <= 0) {
+                if (Debugger.logPriority > 0) Debug.LogWarning("DOShakeRotation: duration can't be 0, returning NULL without creating a tween");
+                return null;
+            }
+            return DOTween.Shake(() => target.localEulerAngles, x => target.localRotation = Quaternion.Euler(x), duration, strength, vibrato, randomness, false, fadeOut)
                 .SetTarget(target).SetSpecialStartupMode(SpecialStartupMode.SetShake);
         }
         /// <summary>Shakes a Transform's localRotation.</summary>
@@ -788,9 +913,14 @@ namespace DG.Tweening
         /// <param name="vibrato">Indicates how much will the shake vibrate</param>
         /// <param name="randomness">Indicates how much the shake will be random (0 to 180 - values higher than 90 kind of suck, so beware). 
         /// Setting it to 0 will shake along a single direction.</param>
-        public static Tweener DOShakeRotation(this Transform target, float duration, Vector3 strength, int vibrato = 10, float randomness = 90)
+        /// <param name="fadeOut">If TRUE the shake will automatically fadeOut smoothly within the tween's duration, otherwise it will not</param>
+        public static Tweener DOShakeRotation(this Transform target, float duration, Vector3 strength, int vibrato = 10, float randomness = 90, bool fadeOut = true)
         {
-            return DOTween.Shake(() => target.localEulerAngles, x => target.localRotation = Quaternion.Euler(x), duration, strength, vibrato, randomness)
+            if (duration <= 0) {
+                if (Debugger.logPriority > 0) Debug.LogWarning("DOShakeRotation: duration can't be 0, returning NULL without creating a tween");
+                return null;
+            }
+            return DOTween.Shake(() => target.localEulerAngles, x => target.localRotation = Quaternion.Euler(x), duration, strength, vibrato, randomness, fadeOut)
                 .SetTarget(target).SetSpecialStartupMode(SpecialStartupMode.SetShake);
         }
         /// <summary>Shakes a Transform's localScale.</summary>
@@ -799,9 +929,15 @@ namespace DG.Tweening
         /// <param name="vibrato">Indicates how much will the shake vibrate</param>
         /// <param name="randomness">Indicates how much the shake will be random (0 to 180 - values higher than 90 kind of suck, so beware). 
         /// Setting it to 0 will shake along a single direction.</param>
-        public static Tweener DOShakeScale(this Transform target, float duration, float strength = 1, int vibrato = 10, float randomness = 90)
+        /// <param name="fadeOut">If TRUE the shake will automatically fadeOut smoothly within the tween's duration, otherwise it will not</param>
+        public static Tweener DOShakeScale(this Transform target, float duration, float strength = 1, int vibrato = 10, float randomness = 90, bool fadeOut = true)
         {
-            return DOTween.Shake(() => target.localScale, x => target.localScale = x, duration, strength, vibrato, randomness, false)
+            if (duration <= 0) {
+                Debug.Log(Debugger.logPriority);
+                if (Debugger.logPriority > 0) Debug.LogWarning("DOShakeScale: duration can't be 0, returning NULL without creating a tween");
+                return null;
+            }
+            return DOTween.Shake(() => target.localScale, x => target.localScale = x, duration, strength, vibrato, randomness, false, fadeOut)
                 .SetTarget(target).SetSpecialStartupMode(SpecialStartupMode.SetShake);
         }
         /// <summary>Shakes a Transform's localScale.</summary>
@@ -810,13 +946,18 @@ namespace DG.Tweening
         /// <param name="vibrato">Indicates how much will the shake vibrate</param>
         /// <param name="randomness">Indicates how much the shake will be random (0 to 180 - values higher than 90 kind of suck, so beware). 
         /// Setting it to 0 will shake along a single direction.</param>
-        public static Tweener DOShakeScale(this Transform target, float duration, Vector3 strength, int vibrato = 10, float randomness = 90)
+        /// <param name="fadeOut">If TRUE the shake will automatically fadeOut smoothly within the tween's duration, otherwise it will not</param>
+        public static Tweener DOShakeScale(this Transform target, float duration, Vector3 strength, int vibrato = 10, float randomness = 90, bool fadeOut = true)
         {
-            return DOTween.Shake(() => target.localScale, x => target.localScale = x, duration, strength, vibrato, randomness)
+            if (duration <= 0) {
+                if (Debugger.logPriority > 0) Debug.LogWarning("DOShakeScale: duration can't be 0, returning NULL without creating a tween");
+                return null;
+            }
+            return DOTween.Shake(() => target.localScale, x => target.localScale = x, duration, strength, vibrato, randomness, fadeOut)
                 .SetTarget(target).SetSpecialStartupMode(SpecialStartupMode.SetShake);
         }
 
-        #region Special
+#region Special
 
         /// <summary>Tweens a Transform's position to the given value, while also applying a jump effect along the Y axis.
         /// Returns a Sequence instead of a Tweener.
@@ -959,6 +1100,18 @@ namespace DG.Tweening
 
         #endregion
 
+        #region Tween
+
+        /// <summary>Tweens a Tween's timeScale to the given value.
+        /// Also stores the Tween as the tween's target so it can be used for filtered operations</summary>
+        /// <param name="endValue">The end value to reach</param><param name="duration">The duration of the tween</param>
+        public static Tweener DOTimeScale(this Tween target, float endValue, float duration)
+        {
+            return DOTween.To(() => target.timeScale, x => target.timeScale = x, endValue, duration).SetTarget(target);
+        }
+
+        #endregion
+
         #region Blendables
 
         #region Light
@@ -984,9 +1137,9 @@ namespace DG.Tweening
                 .Blendable().SetTarget(target);
         }
 
-        #endregion
+#endregion
 
-        #region Material
+#region Material
 
         /// <summary>Tweens a Material's color to the given value,
         /// in a way that allows other DOBlendableColor tweens to work together on the same target,
@@ -1022,7 +1175,7 @@ namespace DG.Tweening
                 return null;
             }
 
-            endValue = endValue - target.color;
+            endValue = endValue - target.GetColor(property);
             Color to = new Color(0, 0, 0, 0);
             return DOTween.To(() => to, x => {
 #if COMPATIBLE
@@ -1036,9 +1189,9 @@ namespace DG.Tweening
                 .Blendable().SetTarget(target);
         }
 
-        #endregion
+#endregion
 
-        #region Transform
+#region Transform
 
         /// <summary>Tweens a Transform's position BY the given value (as if you chained a <code>SetRelative</code>),
         /// in a way that allows other DOBlendableMove tweens to work together on the same target,
@@ -1090,7 +1243,8 @@ namespace DG.Tweening
         /// <param name="mode">Rotation mode</param>
         public static Tweener DOBlendableRotateBy(this Transform target, Vector3 byValue, float duration, RotateMode mode = RotateMode.Fast)
         {
-            Quaternion to = target.rotation;
+//            Quaternion to = target.rotation;
+            Quaternion to = Quaternion.identity;
             TweenerCore<DOQuaternion, DOVector3, QuaternionOptions> t = DOTween.To(() => to, x => {
 #if COMPATIBLE
                 Quaternion diff = x.value * Quaternion.Inverse(to);
@@ -1113,7 +1267,8 @@ namespace DG.Tweening
         /// <param name="mode">Rotation mode</param>
         public static Tweener DOBlendableLocalRotateBy(this Transform target, Vector3 byValue, float duration, RotateMode mode = RotateMode.Fast)
         {
-            Quaternion to = target.localRotation;
+//            Quaternion to = target.localRotation;
+            Quaternion to = Quaternion.identity;
             TweenerCore<DOQuaternion, DOVector3, QuaternionOptions> t = DOTween.To(() => to, x => {
 #if COMPATIBLE
                 Quaternion diff = x.value * Quaternion.Inverse(to);
@@ -1148,14 +1303,14 @@ namespace DG.Tweening
                 .Blendable().SetTarget(target);
         }
 
-        #endregion
+#endregion
 
-        #endregion
+#endregion
 
         // ===================================================================================
         // OPERATION SHORTCUTS ---------------------------------------------------------------
 
-        #region Operation Shortcuts
+#region Operation Shortcuts
 
         /// <summary>
         /// Completes all tweens that have this target as a reference
@@ -1401,6 +1556,6 @@ namespace DG.Tweening
             return DOTween.TogglePause(target);
         }
 
-        #endregion
+#endregion
     }
 }

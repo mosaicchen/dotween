@@ -1,18 +1,33 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using DG.Tweening;
+using UnityEngine.SceneManagement;
 
 public class TempPro : MonoBehaviour
 {
-	public Rigidbody2D target;
+	public DOTweenPath target;
 
-	void Start()
+	IEnumerator Start()
 	{
-		target.transform.DOScale(2, 1).SetLoops(-1);
+		Tween t = this.transform.DOMoveX(2, 2).OnRewind(()=> Debug.Log("Rewind 0"));
+		yield return new WaitForSeconds(1);
+		t.Rewind();
+		// target.GetTween().Rewind();
 	}
 
-	void FixedUpdate()
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Space)) SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+	public void OnComplete()
 	{
-		target.position += new Vector2(0.03f, 0);
+		Debug.Log("COMPLETE");
 	}
+
+    public void OnRewind()
+    {
+        Debug.Log("REWIND");
+    }
 }

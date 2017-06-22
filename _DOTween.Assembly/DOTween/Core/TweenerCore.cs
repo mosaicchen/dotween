@@ -10,6 +10,7 @@ using DG.Tweening.Core.Surrogates;
 using System;
 using DG.Tweening.Core.Enums;
 using DG.Tweening.Plugins.Core;
+using DG.Tweening.Plugins.Options;
 using UnityEngine;
 
 #pragma warning disable 1591
@@ -20,7 +21,7 @@ namespace DG.Tweening.Core
     // T1: type of value to tween
     // T2: format in which value is stored while tweening
     // TPlugOptions: options type
-    public class TweenerCore<T1,T2,TPlugOptions> : Tweener where TPlugOptions : struct
+    public class TweenerCore<T1,T2,TPlugOptions> : Tweener where TPlugOptions : struct, IPlugOptions
     {
         // SETUP DATA ////////////////////////////////////////////////
 
@@ -125,12 +126,14 @@ namespace DG.Tweening.Core
         }
 
         // _tweenPlugin is not reset since it's useful to keep it as a reference
-        internal override sealed void Reset()
+        internal sealed override void Reset()
         {
             base.Reset();
 
             if (tweenPlugin != null) tweenPlugin.Reset(this);
-            plugOptions = new TPlugOptions();
+//            plugOptions = new TPlugOptions(); // Generates GC because converts to an Activator.CreateInstance
+//            plugOptions = Utils.InstanceCreator<TPlugOptions>.Create(); // Fixes GC allocation using workaround (doesn't work with IL2CPP)
+            plugOptions.Reset(); // Alternate fix that uses IPlugOptions Reset
             getter = null;
             setter = null;
             hasManuallySetStartValue = false;
